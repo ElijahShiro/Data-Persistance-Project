@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.SceneManagement;
 using UnityEngine.UI;
+using System.IO;
 
 public class MainManager : MonoBehaviour
 {
@@ -11,17 +12,27 @@ public class MainManager : MonoBehaviour
     public Rigidbody Ball;
 
     public Text ScoreText;
+    public Text BestScoreText;
+    private string playerName;
+    private string bestPlayerName;
     public GameObject GameOverText;
+
     
     private bool m_Started = false;
     private int m_Points;
+    private int m_Score;
     
     private bool m_GameOver = false;
 
-    
+
     // Start is called before the first frame update
+    
     void Start()
     {
+        playerName = ScoreManager.instance.playerName;
+        LoadScore();
+        BestScoreText.text = ("Best Score : " + bestPlayerName + " " + m_Score);
+
         const float step = 0.6f;
         int perLine = Mathf.FloorToInt(4.0f / step);
         
@@ -70,7 +81,47 @@ public class MainManager : MonoBehaviour
 
     public void GameOver()
     {
+        
         m_GameOver = true;
         GameOverText.SetActive(true);
+
+        if (m_Points > m_Score) 
+        {
+            SaveScore();
+            LoadScore();
+            BestScoreText.text = ("Best Score : " + bestPlayerName + " " + m_Score);
+            
+        }
+        
+    }
+
+    public class SaveBestScore
+    {
+        public string playerName;
+        public int m_points;
+    }
+
+    public void SaveScore()
+    {
+
+
+        SaveBestScore data = new SaveBestScore();
+        data.playerName = playerName;
+        data.m_points = m_Points;
+        string json = JsonUtility.ToJson(data);
+        File.WriteAllText(Application.persistentDataPath + "/savefile.json", json);
+    }
+
+    public void LoadScore()
+    {
+        string path = Application.persistentDataPath + "/savefile.json";
+        if (File.Exists(path))
+        {
+            string json = File.ReadAllText(path);
+            SaveBestScore data = JsonUtility.FromJson<SaveBestScore>(json);
+
+            bestPlayerName = data.playerName;
+            m_Score = data.m_points;
+        }
     }
 }
